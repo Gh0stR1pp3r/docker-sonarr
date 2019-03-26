@@ -12,13 +12,6 @@ Find us at:
 * [Discord](https://discord.gg/YWrKVTn) - realtime support / chat with the community and the team.
 * [IRC](https://irc.linuxserver.io) - on freenode at `#linuxserver.io`. Our primary support channel is Discord.
 * [Blog](https://blog.linuxserver.io) - all the things you can do with our containers including How-To guides, opinions and much more!
-* [Podcast](https://anchor.fm/linuxserverio) - on hiatus. Coming back soon (late 2018).
-
-# PSA: Changes are happening
-
-From August 2018 onwards, Linuxserver are in the midst of switching to a new CI platform which will enable us to build and release multiple architectures under a single repo. To this end, existing images for `arm64` and `armhf` builds are being deprecated. They are replaced by a manifest file in each container which automatically pulls the correct image for your architecture. You'll also be able to pull based on a specific architecture tag.
-
-TLDR: Multi-arch support is changing from multiple repos to one repo per container image.
 
 # [linuxserver/sonarr](https://github.com/linuxserver/docker-sonarr)
 [![](https://img.shields.io/discord/354974912613449730.svg?logo=discord&label=LSIO%20Discord&style=flat-square)](https://discord.gg/YWrKVTn)
@@ -36,7 +29,7 @@ TLDR: Multi-arch support is changing from multiple repos to one repo per contain
 
 ## Supported Architectures
 
-Our images support multiple architectures such as `x86-64`, `arm64` and `armhf`. We utilise the docker manifest for multi-platform awareness. More information is available from docker [here](https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#manifest-list). 
+Our images support multiple architectures such as `x86-64`, `arm64` and `armhf`. We utilise the docker manifest for multi-platform awareness. More information is available from docker [here](https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#manifest-list) and our announcement [here](https://blog.linuxserver.io/2019/02/21/the-lsio-pipeline-project/). 
 
 Simply pulling `linuxserver/sonarr` should retrieve the correct image for your arch, but you can also pull specific arch images via tags.
 
@@ -46,7 +39,7 @@ The architectures supported by this image are:
 | :----: | --- |
 | x86-64 | amd64-latest |
 | arm64 | arm64v8-latest |
-| armhf | arm32v6-latest |
+| armhf | arm32v7-latest |
 
 
 ## Usage
@@ -58,8 +51,8 @@ Here are some example snippets to help you get started creating a container.
 ```
 docker create \
   --name=sonarr \
-  -e PUID=1001 \
-  -e PGID=1001 \
+  -e PUID=1000 \
+  -e PGID=1000 \
   -e TZ=Europe/London \
   -p 8989:8989 \
   -v <path to data>:/config \
@@ -92,8 +85,8 @@ services:
     image: linuxserver/sonarr
     container_name: sonarr
     environment:
-      - PUID=1001
-      - PGID=1001
+      - PUID=1000
+      - PGID=1000
       - TZ=Europe/London
     volumes:
       - <path to data>:/config
@@ -101,7 +94,6 @@ services:
       - <path/to/downloadclient-downloads>:/downloads
     ports:
       - 8989:8989
-    mem_limit: 4096m
     restart: unless-stopped
 ```
 
@@ -112,8 +104,8 @@ Container images are configured using parameters passed at runtime (such as thos
 | Parameter | Function |
 | :----: | --- |
 | `-p 8989` | The port for the Sonarr webinterface |
-| `-e PUID=1001` | for UserID - see below for explanation |
-| `-e PGID=1001` | for GroupID - see below for explanation |
+| `-e PUID=1000` | for UserID - see below for explanation |
+| `-e PGID=1000` | for GroupID - see below for explanation |
 | `-e TZ=Europe/London` | Specify a timezone to use EG Europe/London, this is required for Sonarr |
 | `-v /config` | Database and sonarr configs |
 | `-v /tv` | Location of TV library on disk |
@@ -125,12 +117,13 @@ When using volumes (`-v` flags) permissions issues can arise between the host OS
 
 Ensure any volume directories on the host are owned by the same user you specify and any permissions issues will vanish like magic.
 
-In this instance `PUID=1001` and `PGID=1001`, to find yours use `id user` as below:
+In this instance `PUID=1000` and `PGID=1000`, to find yours use `id user` as below:
 
 ```
   $ id username
-    uid=1001(dockeruser) gid=1001(dockergroup) groups=1001(dockergroup)
+    uid=1000(dockeruser) gid=1000(dockergroup) groups=1000(dockergroup)
 ```
+
 
 &nbsp;
 ## Application Setup
@@ -148,8 +141,39 @@ Access the webui at `<your-ip>:8989`, for more information check out [Sonarr](ht
 * image version number
   * `docker inspect -f '{{ index .Config.Labels "build_version" }}' linuxserver/sonarr`
 
+## Updating Info
+
+Most of our images are static, versioned, and require an image update and container recreation to update the app inside. With some exceptions (ie. nextcloud, plex), we do not recommend or support updating apps inside the container. Please consult the [Application Setup](#application-setup) section above to see if it is recommended for the image.  
+  
+Below are the instructions for updating containers:  
+  
+### Via Docker Run/Create
+* Update the image: `docker pull linuxserver/sonarr`
+* Stop the running container: `docker stop sonarr`
+* Delete the container: `docker rm sonarr`
+* Recreate a new container with the same docker create parameters as instructed above (if mapped correctly to a host folder, your `/config` folder and settings will be preserved)
+* Start the new container: `docker start sonarr`
+* You can also remove the old dangling images: `docker image prune`
+
+### Via Taisun auto-updater (especially useful if you don't remember the original parameters)
+* Pull the latest image at its tag and replace it with the same env variables in one shot:
+  ```
+  docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock taisun/updater \
+  --oneshot sonarr
+  ```
+* You can also remove the old dangling images: `docker image prune`
+
+### Via Docker Compose
+* Update all images: `docker-compose pull`
+  * or update a single image: `docker-compose pull sonarr`
+* Let compose update all containers as necessary: `docker-compose up -d`
+  * or update a single container: `docker-compose up -d sonarr`
+* You can also remove the old dangling images: `docker image prune`
+
 ## Versions
 
+* **23.03.19:** - Switching to new Base images, shift to arm32v7 tag.
 * **01.02.19:** - Multi arch images and pipeline build logic
 * **15.12.17:** - Fix continuation lines.
 * **12.07.17:** - Add inspect commands to README, move to jenkins build and push.
