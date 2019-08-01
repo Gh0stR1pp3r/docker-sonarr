@@ -41,6 +41,16 @@ The architectures supported by this image are:
 | arm64 | arm64v8-latest |
 | armhf | arm32v7-latest |
 
+## Version Tags
+
+This image provides various versions that are available via tags. `latest` tag usually provides the latest stable version. Others are considered under development and caution must be exercised when using them.
+
+| Tag | Description |
+| :----: | --- |
+| latest | Stable releases from Sonarr (currently v2) |
+| develop | Development releases from Sonarr (currently v2) |
+| preview | Preview releases from Sonarr (currently v3) |
+| 5.14 | Stable Sonarr releases, but run on Mono 5.14 |
 
 ## Usage
 
@@ -54,6 +64,7 @@ docker create \
   -e PUID=1000 \
   -e PGID=1000 \
   -e TZ=Europe/London \
+  -e UMASK_SET=022 `#optional` \
   -p 8989:8989 \
   -v <path to data>:/config \
   -v <path/to/tvseries>:/tv \
@@ -61,16 +72,6 @@ docker create \
   --restart unless-stopped \
   linuxserver/sonarr
 ```
-
-### Version Tags
-
-This image provides various versions that are available via tags. `latest` tag usually provides the latest stable version. Others are considered under development and caution must be exercised when using them.
-
-| Tag | Description |
-| :----: | --- |
-| latest | stable builds from the master branch of sonarr (currently v2) |
-| develop | development builds from the develop branch of sonarr (currently v2) |
-| preview | preview builds from the phantom-develop branch of sonarr (currently v3) |
 
 
 ### docker-compose
@@ -88,6 +89,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/London
+      - UMASK_SET=022 #optional
     volumes:
       - <path to data>:/config
       - <path/to/tvseries>:/tv
@@ -107,6 +109,7 @@ Container images are configured using parameters passed at runtime (such as thos
 | `-e PUID=1000` | for UserID - see below for explanation |
 | `-e PGID=1000` | for GroupID - see below for explanation |
 | `-e TZ=Europe/London` | Specify a timezone to use EG Europe/London, this is required for Sonarr |
+| `-e UMASK_SET=022` | control permissions of files and directories created by Sonarr |
 | `-v /config` | Database and sonarr configs |
 | `-v /tv` | Location of TV library on disk |
 | `-v /downloads` | Location of download managers output directory |
@@ -170,6 +173,9 @@ Below are the instructions for updating containers:
   containrrr/watchtower \
   --run-once sonarr
   ```
+
+**Note:** We do not endorse the use of Watchtower as a solution to automated updates of existing Docker containers. In fact we generally discourage automated updates. However, this is a useful tool for one-time manual updates of containers where you have forgotten the original parameters. In the long term, we highly recommend using Docker Compose.
+
 * You can also remove the old dangling images: `docker image prune`
 
 ## Building locally
@@ -193,6 +199,8 @@ Once registered you can define the dockerfile to use with `-f Dockerfile.aarch64
 
 ## Versions
 
+* **13.06.19:** - Add env variable for setting umask.
+* **10.05.19:** - Rebase to Bionic.
 * **23.03.19:** - Switching to new Base images, shift to arm32v7 tag.
 * **01.02.19:** - Multi arch images and pipeline build logic
 * **15.12.17:** - Fix continuation lines.
